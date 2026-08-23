@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Un push nuevo sobre la misma rama cancela la ejecución anterior.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # El postinstall copia los binarios de ffmpeg.wasm a public/ffmpeg/.
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      # El catálogo de formatos afirma qué encoders trae el core. Si una subida
+      # de @ffmpeg/core los cambiara, esto lo deja a la vista en el log en vez
+      # de fallar en producción.
+      - name: Auditar encoders del core
+        run: npm run audit:encoders | grep -E '^ [A-Z.]+ +(libmp3lame|aac|libvorbis|libopus|flac|alac|pcm_s16le|pcm_s24le|pcm_s16be) '

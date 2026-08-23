@@ -1,0 +1,60 @@
+{
+  "name": "bitperfect",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Conversor de audio que funciona íntegramente en tu navegador.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SirProg/bitperfect.git"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "lint": "oxlint",
+    "typecheck": "tsc -b --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "sync:ffmpeg": "node scripts/sync-ffmpeg-core.mjs",
+    "postinstall": "node scripts/sync-ffmpeg-core.mjs",
+    "prebuild": "node scripts/sync-ffmpeg-core.mjs",
+    "audit:encoders": "node scripts/audit-encoders.mjs"
+  },
+  "dependencies": {
+    "@ffmpeg/ffmpeg": "^0.12.15",
+    "@ffmpeg/util": "^0.12.2",
+    "@fontsource-variable/archivo": "^5.3.0",
+    "@fontsource-variable/inter": "^5.3.0",
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
+    "i18next": "^26.4.0",
+    "i18next-browser-languagedetector": "^8.2.0",
+    "music-metadata": "^11.15.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-i18next": "^17.0.12"
+  },
+  "devDependencies": {
+    "@ffmpeg/core": "^0.12.10",
+    "@ffmpeg/core-mt": "^0.12.10",
+    "@tailwindcss/vite": "^4.3.3",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.4",
+    "jsdom": "^26.1.0",
+    "oxlint": "^1.75.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "~6.0.2",
+    "vite": "^8.2.0",
+    "vitest": "^4.1.11"
+  }
+}

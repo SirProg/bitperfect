@@ -1,0 +1,29 @@
+name: ✨ Propuesta de mejora
+description: Sugiere una funcionalidad o un cambio
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: ¿Qué problema resuelve?
+      description: Describe la situación concreta en la que la herramienta se queda corta hoy.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: ¿Qué propones?
+      description: Cómo te imaginas que debería funcionar.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas que hayas considerado
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Encaje con el proyecto
+      options:
+        - label: Mi propuesta no requiere un backend ni enviar archivos a un servidor.
+          required: true

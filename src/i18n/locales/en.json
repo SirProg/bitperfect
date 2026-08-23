@@ -1,0 +1,135 @@
+{
+  "app": {
+    "name": "BitPerfect",
+    "tagline": "Convert your audio without it leaving the browser.",
+    "description": "Pick a file, pick a format, download it. Conversion runs on your machine: nothing is uploaded, there are no accounts, and no history is kept."
+  },
+  "language": { "label": "Language" },
+  "audio": { "mono": "Mono", "stereo": "Stereo" },
+  "engine": {
+    "multiThread": {
+      "label": "Multi-thread",
+      "help": "Your browser allows SharedArrayBuffer, so conversion is spread across {{threads}} cores."
+    },
+    "singleThread": {
+      "label": "Single-thread",
+      "help": "Your browser does not allow SharedArrayBuffer. Conversion runs on one thread and takes longer, but the result is identical."
+    }
+  },
+  "dropzone": {
+    "title": "Drop an audio file",
+    "subtitle": "or click to choose one",
+    "limit": "Up to {{size}} MB · MP3 · AAC · OGG · OPUS · FLAC · WAV · ALAC · AIFF"
+  },
+  "reject": {
+    "too-large": "“{{name}}” is over the 500 MB limit.",
+    "empty": "“{{name}}” is empty.",
+    "not-audio": "“{{name}}” does not look like an audio file."
+  },
+  "source": {
+    "title": "Source",
+    "coverAlt": "Album cover",
+    "previewLabel": "Original audio"
+  },
+  "target": { "title": "Target" },
+  "preview": {
+    "play": "Play {{label}}",
+    "pause": "Pause {{label}}",
+    "playShort": "Play",
+    "pauseShort": "Pause"
+  },
+  "format": {
+    "legend": "Output format",
+    "lossless": "Lossless",
+    "losslessHint": "keeps every bit of the original",
+    "lossy": "Lossy",
+    "lossyHint": "drops information to take up less space"
+  },
+  "preset": {
+    "legend": "Preset",
+    "customActive": "You have changed a setting by hand. Pick a preset again to restore it.",
+    "maxQuality": { "label": "Best quality", "help": "Favours fidelity over file size." },
+    "balanced": { "label": "Balanced", "help": "Good sound at a reasonable size." },
+    "mobile": { "label": "Save space", "help": "Light files for your phone." }
+  },
+  "advanced": {
+    "legend": "Advanced settings",
+    "bitrate": {
+      "label": "Bitrate",
+      "help": "Data per second of audio. Higher means better quality and a bigger file.",
+      "notApplicable": "{{format}} has no bitrate: it discards nothing, so the audio itself sets the size."
+    },
+    "sampleRate": {
+      "label": "Sample rate",
+      "help": "Samples per second. 44.1 kHz is CD quality; raising it will not improve a lower-rate original.",
+      "keep": "Keep the original",
+      "sameAsSource": "same as source"
+    },
+    "bitDepth": {
+      "label": "Bit depth",
+      "help": "Bits per sample. More depth means more dynamic range.",
+      "notApplicable": "{{format}} does not expose bit depth: the codec handles it internally."
+    },
+    "channels": {
+      "label": "Channels",
+      "help": "Mono halves the size; stereo keeps the separation between left and right.",
+      "keep": "Keep the original"
+    },
+    "flac": {
+      "label": "FLAC compression",
+      "help": "Does not affect quality: FLAC is lossless and every level sounds identical. 0 converts fast and takes slightly more space; 8 converts slowly and takes slightly less."
+    },
+    "metadata": {
+      "label": "Keep metadata",
+      "help": "Title, artist, album, year and track number carry over to the converted file."
+    },
+    "cover": {
+      "label": "Keep cover art",
+      "help": "The embedded image carries over to the converted file.",
+      "notSupported": "{{format}} does not support embedded cover art when ffmpeg writes it."
+    }
+  },
+  "warning": {
+    "upconversion": {
+      "title": "Going lossless does not recover quality",
+      "body": "The original already lost information when it was compressed, and that does not come back. You get a faithful copy of what is there, taking up considerably more space."
+    },
+    "lossyToLossy": {
+      "title": "Re-encoding degrades the sound again",
+      "body": "The source is already a lossy format. Converting it to another one stacks two compressions, and raising the bitrate does not prevent that."
+    },
+    "upsampling": {
+      "title": "A higher sample rate adds no detail",
+      "body": "The original does not contain that information. The file grows without sounding better."
+    },
+    "bitDepthUpscale": {
+      "title": "More bit depth adds no range",
+      "body": "The extra bits are padded with zeros. The file grows and gains nothing."
+    },
+    "noCoverSupport": {
+      "title": "The cover art will be lost",
+      "body": "The chosen format does not take an embedded image when ffmpeg writes it. Other metadata is still preserved."
+    }
+  },
+  "actions": { "convert": "Convert" },
+  "queue": {
+    "title": "Conversions",
+    "clear": "Clear finished",
+    "waiting": "Queued",
+    "reading": "Reading the file…",
+    "converting": "Converting… {{percent}}%",
+    "cancel": "Cancel",
+    "cancelled": "Cancelled",
+    "retry": "Try again",
+    "remove": "Remove from list",
+    "failed": "Could not convert.",
+    "result": "Result",
+    "resultPreviewLabel": "Converted audio",
+    "download": "Download",
+    "elapsed": "{{seconds}}s"
+  },
+  "footer": {
+    "privacy": "Everything happens in your browser. No file is ever sent to a server.",
+    "source": "Source code"
+  }
+}

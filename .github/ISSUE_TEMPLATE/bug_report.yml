@@ -1,0 +1,56 @@
+name: 🐛 Reporte de error
+description: Algo no funciona como debería
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por reportarlo. Cuanto más concreto seas, antes podremos reproducirlo.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: ¿Qué ocurrió?
+      description: Describe el problema y qué esperabas que pasara.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Pasos para reproducirlo
+      placeholder: |
+        1. Arrastro un archivo .flac de 40 MB
+        2. Elijo salida MP3 con preset "Equilibrado"
+        3. Pulso Convertir
+        4. La barra se queda al 0 %
+    validations:
+      required: true
+  - type: input
+    id: conversion
+    attributes:
+      label: Conversión implicada
+      description: Formato de origen → formato de destino, y tamaño aproximado del archivo.
+      placeholder: "FLAC → MP3, ~40 MB"
+  - type: input
+    id: browser
+    attributes:
+      label: Navegador y sistema operativo
+      placeholder: "Firefox 140 en Arch Linux"
+    validations:
+      required: true
+  - type: dropdown
+    id: isolated
+    attributes:
+      label: ¿Qué devuelve `crossOriginIsolated` en la consola del navegador?
+      description: Abre las herramientas de desarrollo, escribe `crossOriginIsolated` y pulsa Enter. Nos dice si estás en modo multihilo o monohilo.
+      options:
+        - "true"
+        - "false"
+        - No lo sé / no pude comprobarlo
+    validations:
+      required: true
+  - type: textarea
+    id: console
+    attributes:
+      label: Errores en la consola
+      description: Pega cualquier error que aparezca. Se formatea como código automáticamente.
+      render: text

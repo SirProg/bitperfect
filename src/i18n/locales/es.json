@@ -1,0 +1,135 @@
+{
+  "app": {
+    "name": "BitPerfect",
+    "tagline": "Convierte tu audio sin que salga del navegador.",
+    "description": "Elige un archivo, elige el formato y descárgalo. La conversión ocurre en tu equipo: nada se sube a ningún servidor, no hay cuentas y no queda historial."
+  },
+  "language": { "label": "Idioma" },
+  "audio": { "mono": "Mono", "stereo": "Estéreo" },
+  "engine": {
+    "multiThread": {
+      "label": "Multihilo",
+      "help": "Tu navegador permite SharedArrayBuffer, así que la conversión reparte el trabajo entre {{threads}} núcleos."
+    },
+    "singleThread": {
+      "label": "Monohilo",
+      "help": "Tu navegador no permite SharedArrayBuffer. La conversión usa un solo hilo y tarda más, pero el resultado es idéntico."
+    }
+  },
+  "dropzone": {
+    "title": "Arrastra un archivo de audio",
+    "subtitle": "o haz clic para elegirlo",
+    "limit": "Hasta {{size}} MB · MP3 · AAC · OGG · OPUS · FLAC · WAV · ALAC · AIFF"
+  },
+  "reject": {
+    "too-large": "«{{name}}» supera el límite de 500 MB.",
+    "empty": "«{{name}}» está vacío.",
+    "not-audio": "«{{name}}» no parece un archivo de audio."
+  },
+  "source": {
+    "title": "Origen",
+    "coverAlt": "Carátula del álbum",
+    "previewLabel": "Audio original"
+  },
+  "target": { "title": "Destino" },
+  "preview": {
+    "play": "Reproducir {{label}}",
+    "pause": "Pausar {{label}}",
+    "playShort": "Escuchar",
+    "pauseShort": "Pausar"
+  },
+  "format": {
+    "legend": "Formato de salida",
+    "lossless": "Sin pérdida",
+    "losslessHint": "conserva cada bit del original",
+    "lossy": "Con pérdida",
+    "lossyHint": "descarta información para ocupar menos"
+  },
+  "preset": {
+    "legend": "Preset",
+    "customActive": "Has ajustado algún parámetro a mano. Vuelve a elegir un preset para restaurarlo.",
+    "maxQuality": { "label": "Máxima calidad", "help": "Prioriza la fidelidad sobre el tamaño." },
+    "balanced": { "label": "Equilibrado", "help": "Buen sonido con un tamaño razonable." },
+    "mobile": { "label": "Ahorro de espacio", "help": "Archivos ligeros para el móvil." }
+  },
+  "advanced": {
+    "legend": "Ajustes avanzados",
+    "bitrate": {
+      "label": "Bitrate",
+      "help": "Datos por segundo de audio. Más alto es mejor calidad y archivo más grande.",
+      "notApplicable": "{{format}} no usa bitrate: al no descartar información, el tamaño lo marca el propio audio."
+    },
+    "sampleRate": {
+      "label": "Frecuencia de muestreo",
+      "help": "Muestras por segundo. 44.1 kHz es calidad CD; subirla no mejora un original de menor frecuencia.",
+      "keep": "Conservar la del original",
+      "sameAsSource": "la del original"
+    },
+    "bitDepth": {
+      "label": "Profundidad de bits",
+      "help": "Bits por muestra. Más profundidad es más rango dinámico.",
+      "notApplicable": "{{format}} no expone profundidad de bits: el códec la gestiona internamente."
+    },
+    "channels": {
+      "label": "Canales",
+      "help": "Mono reduce el tamaño a la mitad; estéreo conserva la separación entre izquierda y derecha.",
+      "keep": "Conservar los del original"
+    },
+    "flac": {
+      "label": "Compresión FLAC",
+      "help": "No afecta a la calidad: FLAC es sin pérdida y el sonido es idéntico en todos los niveles. 0 convierte rápido y ocupa algo más; 8 convierte despacio y ocupa algo menos."
+    },
+    "metadata": {
+      "label": "Conservar metadatos",
+      "help": "Título, artista, álbum, año y número de pista pasan al archivo convertido."
+    },
+    "cover": {
+      "label": "Conservar carátula",
+      "help": "La imagen embebida viaja al archivo convertido.",
+      "notSupported": "{{format}} no admite carátula embebida al escribirla con ffmpeg."
+    }
+  },
+  "warning": {
+    "upconversion": {
+      "title": "Pasar a sin pérdida no recupera calidad",
+      "body": "El original ya perdió información al comprimirse y eso no vuelve. Obtendrás una copia fiel de lo que hay, ocupando bastante más espacio."
+    },
+    "lossyToLossy": {
+      "title": "Recomprimir vuelve a degradar el sonido",
+      "body": "El origen ya es un formato con pérdida. Convertirlo a otro encadena dos compresiones, y subir el bitrate no lo evita."
+    },
+    "upsampling": {
+      "title": "Subir la frecuencia no añade detalle",
+      "body": "El original no contiene esa información. El archivo crecerá sin sonar mejor."
+    },
+    "bitDepthUpscale": {
+      "title": "Subir la profundidad no añade rango",
+      "body": "Los bits de más se rellenan con ceros. El archivo crece sin ganar nada."
+    },
+    "noCoverSupport": {
+      "title": "La carátula se perderá",
+      "body": "El formato elegido no admite imagen embebida cuando la escribe ffmpeg. Los demás metadatos sí se conservan."
+    }
+  },
+  "actions": { "convert": "Convertir" },
+  "queue": {
+    "title": "Conversiones",
+    "clear": "Limpiar terminadas",
+    "waiting": "En cola",
+    "reading": "Leyendo el archivo…",
+    "converting": "Convirtiendo… {{percent}} %",
+    "cancel": "Cancelar",
+    "cancelled": "Cancelada",
+    "retry": "Reintentar",
+    "remove": "Quitar de la lista",
+    "failed": "No se pudo convertir.",
+    "result": "Resultado",
+    "resultPreviewLabel": "Audio convertido",
+    "download": "Descargar",
+    "elapsed": "{{seconds}} s"
+  },
+  "footer": {
+    "privacy": "Todo ocurre en tu navegador. Ningún archivo se envía a un servidor.",
+    "source": "Código fuente"
+  }
+}

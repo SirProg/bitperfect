@@ -7,6 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Vite](https://img.shields.io/badge/Vite-React_TS-646CFF.svg)](https://vitejs.dev/)
 [![ffmpeg.wasm](https://img.shields.io/badge/powered_by-ffmpeg.wasm-007808.svg)](https://ffmpegwasm.netlify.app/)
+[![Deploy: Vercel](https://img.shields.io/badge/deploy-Vercel-000000.svg)](https://vercel.com/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
 
 </div>
@@ -17,7 +18,7 @@
 
 **BitPerfect** es una aplicación web de código abierto para **convertir archivos de audio entre formatos** (por ejemplo `.mp3 → .flac` o `.flac → .mp3`). Toda la conversión ocurre **dentro del navegador** gracias a [ffmpeg.wasm](https://ffmpegwasm.netlify.app/): el archivo **nunca se sube a ningún servidor**, lo que hace la herramienta rápida, privada y gratuita de alojar.
 
-Nace como acompañante del proyecto [**musikver**](https://github.com/TU_USUARIO/musikver) (servidor de música FLAC): con BitPerfect puedes convertir tus pistas al formato que necesites antes de llevarlas a tu biblioteca o a cualquier otro dispositivo. Aun así, **es una app totalmente independiente**: no comparte código, cuentas ni conexión con musikver.
+Nace como acompañante del proyecto [**musikver**](https://github.com/SirProg/musikver) (servidor de música FLAC): con BitPerfect puedes convertir tus pistas al formato que necesites antes de llevarlas a tu biblioteca o a cualquier otro dispositivo. Aun así, **es una app totalmente independiente**: no comparte código, cuentas ni conexión con musikver.
 
 ### Características principales
 
@@ -56,7 +57,11 @@ BitPerfect apunta a cubrir los formatos de audio **más conocidos y usados**, ta
 | ALAC    | `.m4a`    | Sin pérdida  | ✅ | ✅ |
 | AIFF    | `.aiff`   | Sin pérdida (PCM) | ✅ | ✅ |
 
-> La lista exacta depende de los códecs incluidos en el build de `ffmpeg.wasm` empleado. Formatos poco comunes o propietarios pueden requerir un build personalizado del core.
+> Los ocho formatos están **verificados** contra el build de `@ffmpeg/core` que usa el proyecto: `npm run audit:encoders` pregunta al propio binario qué encoders trae. Formatos poco comunes o propietarios requerirían un build personalizado del core.
+>
+> Dos límites reales de este build, que la interfaz ya respeta y por eso nunca llegan a fallar:
+> - **Ogg Vorbis** no admite frecuencias por encima de **48 kHz**.
+> - **Opus** solo admite 8, 12, 16, 24 y 48 kHz, y se codifica con complejidad 4 (ver [Notas de implementación](#-notas-de-implementación)).
 
 ---
 
@@ -101,10 +106,16 @@ Se conservan los **tags** (título, artista, álbum, año, número de pista…) 
 | Capa | Tecnología |
 |------|-----------|
 | Build / dev | [Vite](https://vitejs.dev/) |
-| UI | [React](https://react.dev/) + **TypeScript** |
+| UI | [React](https://react.dev/) 19 + **TypeScript** |
+| Estilos | [Tailwind CSS](https://tailwindcss.com/) v4 |
+| Tipografías | [Fontsource](https://fontsource.org/) (autohospedadas: Archivo, Inter, JetBrains Mono) |
 | Motor de conversión | [`ffmpeg.wasm`](https://ffmpegwasm.netlify.app/) (FFmpeg compilado a WebAssembly) |
+| Lectura de metadatos | [`music-metadata`](https://github.com/Borewit/music-metadata) |
+| Idiomas | [i18next](https://www.i18next.com/) + react-i18next (es / en) |
+| Tests | [Vitest](https://vitest.dev/) |
+| Lint | [oxlint](https://oxc.rs/) |
 | Ejecución | 100% cliente — sin backend |
-| Despliegue | GitHub Pages (o Vercel como alternativa) |
+| Despliegue | [Vercel](https://vercel.com/) (estático) |
 | Licencia | MIT |
 
 ---
@@ -139,10 +150,11 @@ No hay servidor, base de datos ni almacenamiento remoto. El sitio se sirve como 
 
 ```bash
 # 1. Clonar
-git clone https://github.com/TU_USUARIO/bitperfect.git
+git clone https://github.com/SirProg/bitperfect.git
 cd bitperfect
 
 # 2. Instalar dependencias
+#    El postinstall copia los binarios de ffmpeg.wasm a public/ffmpeg/
 npm install
 
 # 3. Arrancar en modo desarrollo
@@ -151,43 +163,52 @@ npm run dev
 # 4. Abrir el navegador en la URL que indique Vite (por defecto http://localhost:5173)
 ```
 
-Para generar el build de producción:
+> `public/ffmpeg/` es un artefacto derivado y no se versiona. Si el motor no carga, ejecuta `npm run sync:ffmpeg`.
 
-```bash
-npm run build      # genera /dist
-npm run preview    # sirve el build localmente para probarlo
-```
+### Scripts
 
----
+| Script | Qué hace |
+|--------|----------|
+| `npm run dev` | Servidor de desarrollo, ya con las cabeceras COOP/COEP puestas. |
+| `npm run build` | Build de producción en `/dist`. |
+| `npm run preview` | Sirve el build localmente, también con COOP/COEP. |
+| `npm run lint` | oxlint. |
+| `npm run typecheck` | `tsc` sin emitir. |
+| `npm test` | Tests de la lógica pura con Vitest. |
+| `npm run sync:ffmpeg` | Recopia los binarios del core a `public/ffmpeg/`. |
+| `npm run audit:encoders` | Pregunta al core de ffmpeg.wasm qué encoders y parámetros admite. |
 
 ## 🌐 Despliegue
 
-BitPerfect es un sitio estático, así que puede publicarse en cualquier hosting de estáticos. Los dos objetivos son **GitHub Pages** (preferido) y **Vercel** (alternativa).
+BitPerfect se publica en **Vercel** como sitio estático. No hay backend que desplegar: el build produce `/dist` y se sirve tal cual.
 
-### ⚠️ Requisito clave: aislamiento de origen (COOP/COEP)
+### Requisito clave: aislamiento de origen (COOP/COEP)
 
-`ffmpeg.wasm` en su versión multihilo usa `SharedArrayBuffer`, que requiere que la página se sirva con cabeceras de **cross-origin isolation**:
+`ffmpeg.wasm` en su versión multihilo usa `SharedArrayBuffer`, que solo está disponible en páginas servidas con **cross-origin isolation**:
 
 ```
 Cross-Origin-Opener-Policy: same-origin
 Cross-Origin-Embedder-Policy: require-corp
 ```
 
-- **En Vercel** se configuran fácilmente con un `vercel.json` (sección `headers`).
-- **En GitHub Pages no se pueden definir cabeceras personalizadas.** La solución habitual es incluir un pequeño *service worker* (por ejemplo [`coi-serviceworker`](https://github.com/gzuidhof/coi-serviceworker)) que inyecta esas cabeceras desde el cliente. Alternativamente, puede usarse el build **monohilo** de `ffmpeg.wasm`, que no necesita `SharedArrayBuffer` a costa de ser más lento.
+Están declaradas en [`vercel.json`](./vercel.json) para producción y en `vite.config.ts` para desarrollo, de modo que ambos entornos se comportan igual.
 
-### GitHub Pages
+**Consecuencia práctica:** con `require-corp` el navegador **bloquea cualquier recurso de terceros** que no envíe cabecera CORP. Por eso el proyecto no carga nada desde un CDN:
 
-```bash
-# Ajusta la opción `base` en vite.config.ts al nombre del repo, p. ej. base: '/bitperfect/'
-npm run build
-# Publica el contenido de /dist en la rama gh-pages (o vía GitHub Actions)
-```
+- Los binarios del core se copian a `public/ffmpeg/` en el `postinstall` (`scripts/sync-ffmpeg-core.mjs`) y se sirven desde el propio origen.
+- Las tipografías van autohospedadas vía Fontsource. Google Fonts no funcionaría.
 
-### Vercel
-Importa el repositorio en Vercel; detecta Vite automáticamente. Añade las cabeceras COOP/COEP en `vercel.json`.
+### Publicar
 
----
+1. Importa el repositorio en Vercel. Detecta Vite automáticamente (build `npm run build`, salida `dist`).
+2. No hay variables de entorno que configurar.
+3. Cada pull request recibe su propio *preview deployment*.
+
+Para comprobar que el aislamiento quedó activo, abre la consola en el dominio desplegado y ejecuta `crossOriginIsolated`: debe devolver `true`. La cabecera del sitio también lo indica, con **Multihilo** o **Monohilo** junto al nombre.
+
+### Si el navegador no ofrece `SharedArrayBuffer`
+
+La aplicación lo detecta en runtime y carga el core **monohilo**, que no lo necesita. La conversión es más lenta pero el resultado es idéntico, y la interfaz lo indica en lugar de fallar.
 
 ## 🚦 Rendimiento y límites
 
@@ -199,20 +220,45 @@ Importa el repositorio en Vercel; detecta Vite automáticamente. Añade las cabe
 
 ## 🗺️ Roadmap
 
-**MVP (primera versión)**
-- [x] Subir un archivo de audio (drag & drop)
-- [x] Elegir formato de salida
-- [x] Convertir en el navegador con barra de progreso
-- [x] Previsualización antes/después
-- [x] Descargar el resultado
+**Implementado**
+- [x] Subir un archivo de audio (arrastrar y soltar o selector)
+- [x] Los ocho formatos de la tabla, de entrada y de salida
+- [x] Conversión en el navegador con progreso real (derivado del log de ffmpeg)
+- [x] Previsualización de la onda y del sonido, antes y después
+- [x] Descargar el resultado y liberarlo de memoria
+- [x] Presets y control avanzado, cada opción con su explicación
+- [x] Aviso automático en conversiones con pérdida → sin pérdida (y otros cuatro avisos de calidad)
+- [x] Preservación de metadatos y carátula donde el formato lo admite
+- [x] Interfaz bilingüe español / inglés
+- [x] Fallback monohilo para navegadores sin `SharedArrayBuffer`
 
 **Siguientes pasos**
-- [ ] Interfaz **bilingüe** (español → español/inglés)
-- [ ] Presets y control avanzado completos con descripciones
-- [ ] Aviso automático en conversiones con pérdida → sin pérdida
-- [ ] Preservación robusta de carátula entre formatos
-- [ ] Modo monohilo de respaldo para hostings sin COOP/COEP
-- [ ] Conversión por lotes (futuro, fuera del alcance inicial)
+- [ ] Conversión por lotes de verdad (hoy la cola procesa de uno en uno)
+- [ ] Recorte y normalización de volumen
+- [ ] Edición de tags antes de convertir
+- [ ] Onda del resultado también en formatos que el navegador no sabe decodificar
+
+## 🔬 Notas de implementación
+
+Tres rarezas del build de `ffmpeg.wasm` que costaron encontrar y que el código ya sortea. Se dejan escritas porque no son evidentes leyendo el código y volverían a morder al subir la versión del core.
+
+### Opus se codifica con complejidad 4, no con la de por defecto
+
+`libopus` con la complejidad por defecto de ffmpeg (10) **desborda el heap de wasm a 48 kHz estéreo**. En Node el core aborta con `memory access out of bounds`; en el navegador es peor, porque el worker se queda colgado y la promesa de `exec()` no se resuelve nunca. La frontera es exacta: 0–4 funcionan, 5–10 no.
+
+Afecta a *cualquier* salida Opus estéreo, incluso partiendo de 44.1 kHz, porque Opus siempre trabaja internamente a 48 kHz. Por eso `catalog.ts` fija `-compression_level 4`; la diferencia de calidad frente a 10 es marginal.
+
+### El core se recicla después de cada conversión
+
+ffmpeg.wasm acumula memoria entre llamadas a `exec()`. Tras unas ocho conversiones seguidas sobre la misma instancia empieza a abortar con `memory access out of bounds`, y las que siguen fallan todas. `convert.ts` destruye la instancia al terminar cada archivo para que la siguiente arranque con un heap limpio.
+
+Como red de seguridad hay además un plazo máximo por conversión: sin él, un core que revienta dejaría la interfaz esperando indefinidamente.
+
+### Todo se sirve desde el propio origen
+
+`Cross-Origin-Embedder-Policy: require-corp` bloquea cualquier recurso de terceros sin cabecera CORP. Eso descarta cargar el core desde unpkg y descarta Google Fonts. El core se copia en `postinstall` y las tipografías van empaquetadas.
+
+Un detalle fácil de pasar por alto: `@ffmpeg/ffmpeg` crea su worker con `type: "module"`, y ese `worker.js` importa `const.js` y `errors.js` por ruta relativa. Si no se copian junto a él, el worker se queda colgado sin ningún error visible en consola.
 
 ---
 

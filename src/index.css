@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+/* Autohospedadas: con `Cross-Origin-Embedder-Policy: require-corp` el
+   navegador bloquea Google Fonts, que no envía cabecera CORP. */
+@import "@fontsource-variable/archivo";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
+
+@theme {
+  /* Chasis de equipo de audio: azul muy oscuro, no negro puro. */
+  --color-chassis: #0a0e15;
+  --color-panel: #111826;
+  --color-panel-2: #161f30;
+  --color-line: #222d42;
+  --color-line-bright: #33415c;
+
+  --color-ink: #e9e7e2;
+  --color-ink-dim: #9aa4b6;
+  --color-ink-faint: #5d6779;
+
+  /* Ámbar = señal de origen (lo analógico, lo que ya existe).
+     Azul   = señal convertida (lo digital, lo que produce la app).
+     La pareja recorre la interfaz de izquierda a derecha, como el propio
+     camino de la señal. */
+  --color-source: #f0a736;
+  --color-source-dim: #6b4c1c;
+  --color-target: #6ec1e4;
+  --color-target-dim: #26506b;
+
+  --color-danger: #e5484d;
+  --color-warn: #f0a736;
+
+  --font-display: "Archivo Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, monospace;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  background: var(--color-chassis);
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+/* Foco visible siempre, en el color de la señal de destino. */
+:focus-visible {
+  outline: 2px solid var(--color-target);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@utility measure {
+  /* Reservada para cantidades medidas: kHz, kbps, bits, MB, duraciones.
+     Nunca para prosa — es lo que hace que los números se lean como una
+     lectura de instrumento y no como texto corriente. */
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum" 1, "zero" 1;
+  letter-spacing: -0.01em;
+}
+
+@utility rail {
+  /* Etiqueta pequeña en versalitas para los rótulos de sección. */
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-ink-faint);
+}
