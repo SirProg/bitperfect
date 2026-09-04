@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { ConversionOptions } from '../../types'
 import { FORMAT_IDS, getFormat } from '../formats/catalog'
-import { buildArgs, downloadFilename, virtualInputName } from './buildArgs'
+import { buildArgs, COVER_FILENAME, downloadFilename, virtualInputName } from './buildArgs'
 import { parseTimeFromLog } from './progress'
 
 const base: Omit<ConversionOptions, 'format'> = {
@@ -190,5 +190,92 @@ describe('parseTimeFromLog', () => {
 
   it('ignora las líneas que no llevan time=', () => {
     expect(parseTimeFromLog('Stream #0:0: Audio: flac')).toBeUndefined()
+  })
+})
+
+describe('tags explícitos', () => {
+  it('emite un -metadata por cada campo con contenido', () => {
+    const args = buildArgs('x.webm', opts({
+      format: 'mp3',
+      tags: { title: 'Mi canción', artist: 'Alguien', album: 'Un disco', date: '2026' },
+    }))
+    expect(args).toContain('-metadata')
+    expect(args).toContain('title=Mi canción')
+    expect(args).toContain('artist=Alguien')
+    expect(args).toContain('album=Un disco')
+    expect(args).toContain('date=2026')
+  })
+
+  it('van después de -map_metadata, o el original los pisaría', () => {
+    const args = buildArgs('x.webm', opts({ format: 'mp3', tags: { title: 'T' } }))
+    expect(args.indexOf('title=T')).toBeGreaterThan(args.indexOf('-map_metadata'))
+  })
+
+  it('omite los vacíos en vez de escribirlos en blanco', () => {
+    // Un `-metadata artist=` borraría el que trajera el original.
+    const args = buildArgs('x.webm', opts({
+      format: 'mp3',
+      tags: { title: 'T', artist: '', album: '   ', date: undefined },
+    }))
+    expect(args).toContain('title=T')
+    expect(args.some((a) => a.startsWith('artist='))).toBe(false)
+    expect(args.some((a) => a.startsWith('album='))).toBe(false)
+    expect(args.some((a) => a.startsWith('date='))).toBe(false)
+  })
+
+  it('recorta los espacios sobrantes del valor', () => {
+    const args = buildArgs('x.webm', opts({ format: 'mp3', tags: { title: '  T  ' } }))
+    expect(args).toContain('title=T')
+  })
+
+  it('sin tags no añade ningún -metadata suelto', () => {
+    const args = buildArgs('x.flac', opts({ format: 'mp3' }))
+    expect(args.filter((a) => a === '-metadata')).toHaveLength(0)
+  })
+
+  it('funciona en todos los formatos, también los que no admiten carátula', () => {
+    for (const format of FORMAT_IDS) {
+      const args = buildArgs('x.webm', opts({ format, tags: { title: 'T' } }))
+      expect(args, format).toContain('title=T')
+    }
+  })
+})
+
+describe('carátula externa (descarga por URL)', () => {
+  const extras = { coverInput: COVER_FILENAME }
+
+  it('abre un segundo input y mapea su vídeo', () => {
+    const args = buildArgs('x.webm', opts({ format: 'mp3' }), extras)
+    expect(args.slice(0, 4)).toEqual(['-i', 'input.webm', '-i', COVER_FILENAME])
+    expect(args).toContain('1:v')
+    expect(args).not.toContain('0:v?')
+    expect(valueOf(args, '-disposition:v')).toBe('attached_pic')
+  })
+
+  it('sin carátula externa se conserva el comportamiento de siempre', () => {
+    const args = buildArgs('x.flac', opts({ format: 'mp3' }))
+    expect(args).toContain('0:v?')
+    expect(args).not.toContain('1:v')
+  })
+
+  it('no abre el segundo input en formatos que no admiten carátula', () => {
+    // Mapear un stream que el muxer no acepta haría fallar la conversión.
+    for (const format of ['ogg', 'opus'] as const) {
+      const args = buildArgs('x.webm', opts({ format }), extras)
+      expect(args, format).not.toContain(COVER_FILENAME)
+      expect(args, format).not.toContain('1:v')
+      expect(args, format).toContain('-vn')
+    }
+  })
+
+  it('no abre el segundo input si el usuario desactivó la carátula', () => {
+    const args = buildArgs('x.webm', opts({ format: 'mp3', preserveCoverArt: false }), extras)
+    expect(args).not.toContain(COVER_FILENAME)
+    expect(args).toContain('-vn')
+  })
+
+  it('la salida sigue siendo el último argumento', () => {
+    const args = buildArgs('x.webm', opts({ format: 'mp3', tags: { title: 'T' } }), extras)
+    expect(args.at(-1)).toBe('output.mp3')
   })
 })

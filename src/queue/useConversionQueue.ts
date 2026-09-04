@@ -74,6 +74,7 @@ export function useConversionQueue() {
         file: next.file,
         options: next.options,
         metadata,
+        cover: next.cover,
         signal: controller.signal,
         onProgress: (progress) => {
           if (!unmountedRef.current) patch(next.id, { progress })
@@ -105,7 +106,7 @@ export function useConversionQueue() {
   }, [patch])
 
   const addFiles = useCallback(
-    (files: File[], options: ConversionOptions) => {
+    (files: File[], options: ConversionOptions, cover?: Blob) => {
       const accepted: QueueItem[] = []
       const refused: RejectedFile[] = []
 
@@ -118,6 +119,7 @@ export function useConversionQueue() {
         accepted.push({
           id: nextId(),
           file,
+          cover,
           status: 'queued',
           progress: 0,
           options: { ...options },

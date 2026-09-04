@@ -8,6 +8,20 @@ export type Channels = 1 | 2
 export type PresetId = 'maxQuality' | 'balanced' | 'mobile' | 'custom'
 
 /**
+ * Tags que se escriben en el archivo de salida, por encima de los que traiga
+ * el original. Los rellena la descarga por URL, donde el audio llega desnudo:
+ * un `bestaudio` de YouTube es un `.webm` sin título ni artista.
+ */
+export interface ConversionTags {
+  title?: string
+  artist?: string
+  album?: string
+  /** Año o fecha ISO. ffmpeg lo escribe en el campo `date`. */
+  date?: string
+  comment?: string
+}
+
+/**
  * Opciones de una conversión. Todos los campos opcionales significan
  * "deja que ffmpeg decida" o "no aplica a este formato": `buildArgs` omite
  * los que el formato de destino no soporta, leyendo el catálogo.
@@ -27,6 +41,11 @@ export interface ConversionOptions {
   flacCompression?: number
   preserveMetadata: boolean
   preserveCoverArt: boolean
+  /**
+   * Tags explícitos. Se emiten después de `-map_metadata`, así que ganan a los
+   * del original cuando ambos existen.
+   */
+  tags?: ConversionTags
 }
 
 /** Tags leídos del archivo de origen, para mostrarlos en la interfaz. */
@@ -67,6 +86,11 @@ export interface ConversionResult {
 export interface QueueItem {
   id: string
   file: File
+  /**
+   * Carátula que no viene dentro del archivo. La aporta la descarga por URL,
+   * donde la imagen es la miniatura de la fuente.
+   */
+  cover?: Blob
   status: QueueItemStatus
   /** 0–1. Solo significativo mientras `status === 'converting'`. */
   progress: number

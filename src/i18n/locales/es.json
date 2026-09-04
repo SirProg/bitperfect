@@ -1,11 +1,16 @@
 {
   "app": {
     "name": "BitPerfect",
-    "tagline": "Convierte tu audio sin que salga del navegador.",
-    "description": "Elige un archivo, elige el formato y descárgalo. La conversión ocurre en tu equipo: nada se sube a ningún servidor, no hay cuentas y no queda historial."
+    "tagline": "Convierte tu audio sin subirlo a ninguna parte.",
+    "description": "Trae un archivo de tu equipo o pega una URL. Elijas lo que elijas, la conversión ocurre aquí, en tu navegador: no hay cuentas, no queda historial y tu audio no se procesa en servidores ajenos."
   },
-  "language": { "label": "Idioma" },
-  "audio": { "mono": "Mono", "stereo": "Estéreo" },
+  "language": {
+    "label": "Idioma"
+  },
+  "audio": {
+    "mono": "Mono",
+    "stereo": "Estéreo"
+  },
   "engine": {
     "multiThread": {
       "label": "Multihilo",
@@ -31,7 +36,9 @@
     "coverAlt": "Carátula del álbum",
     "previewLabel": "Audio original"
   },
-  "target": { "title": "Destino" },
+  "target": {
+    "title": "Destino"
+  },
   "preview": {
     "play": "Reproducir {{label}}",
     "pause": "Pausar {{label}}",
@@ -48,9 +55,18 @@
   "preset": {
     "legend": "Preset",
     "customActive": "Has ajustado algún parámetro a mano. Vuelve a elegir un preset para restaurarlo.",
-    "maxQuality": { "label": "Máxima calidad", "help": "Prioriza la fidelidad sobre el tamaño." },
-    "balanced": { "label": "Equilibrado", "help": "Buen sonido con un tamaño razonable." },
-    "mobile": { "label": "Ahorro de espacio", "help": "Archivos ligeros para el móvil." }
+    "maxQuality": {
+      "label": "Máxima calidad",
+      "help": "Prioriza la fidelidad sobre el tamaño."
+    },
+    "balanced": {
+      "label": "Equilibrado",
+      "help": "Buen sonido con un tamaño razonable."
+    },
+    "mobile": {
+      "label": "Ahorro de espacio",
+      "help": "Archivos ligeros para el móvil."
+    }
   },
   "advanced": {
     "legend": "Ajustes avanzados",
@@ -111,7 +127,9 @@
       "body": "El formato elegido no admite imagen embebida cuando la escribe ffmpeg. Los demás metadatos sí se conservan."
     }
   },
-  "actions": { "convert": "Convertir" },
+  "actions": {
+    "convert": "Convertir"
+  },
   "queue": {
     "title": "Conversiones",
     "clear": "Limpiar terminadas",
@@ -129,7 +147,65 @@
     "elapsed": "{{seconds}} s"
   },
   "footer": {
-    "privacy": "Todo ocurre en tu navegador. Ningún archivo se envía a un servidor.",
+    "privacy": "Tu audio se convierte en tu equipo. Nada se procesa en servidores ajenos.",
     "source": "Código fuente"
+  },
+  "tabs": {
+    "legend": "Origen del audio",
+    "file": {
+      "label": "Archivo",
+      "hint": "de tu equipo"
+    },
+    "url": {
+      "label": "Desde URL",
+      "hint": "YouTube, TikTok y más"
+    }
+  },
+  "privacy": {
+    "file": "El archivo no sale de tu equipo. Se convierte aquí, en el navegador.",
+    "url": "La URL viajará a tu propio worker para extraer el audio. La conversión sigue ocurriendo aquí.",
+    "urlConfigured": "La URL viajará a {{host}}, tu propio worker. La conversión sigue ocurriendo aquí, en el navegador."
+  },
+  "url": {
+    "label": "Dirección del audio o vídeo",
+    "placeholder": "https://www.youtube.com/watch?v=…",
+    "check": "Comprobar",
+    "checking": "Comprobando…",
+    "fetch": "Traer este audio",
+    "preparing": "El worker está preparando la descarga…",
+    "transferring": "Descargando… {{percent}} %"
+  },
+  "sourceUrl": {
+    "empty": "Pega una dirección para empezar.",
+    "not-a-url": "Eso no parece una dirección web. Debe empezar por https://",
+    "bad-scheme": "Solo se admiten direcciones http y https.",
+    "no-host": "A la dirección le falta el servidor."
+  },
+  "urlEmpty": {
+    "title": "Necesitas un worker propio",
+    "why": "El navegador no puede descargar de YouTube o TikTok por su cuenta: esos sitios no lo permiten desde otra página, y extraer el audio exige un programa que se actualiza cada pocas semanas.",
+    "yours": "Por eso BitPerfect no aloja ninguno. Levantas el tuyo en unos minutos y la dirección que pegues no pasará por ningún servidor ajeno.",
+    "configure": "Configurar mi worker",
+    "docs": "Cómo montarlo"
+  },
+  "worker": {
+    "urlLabel": "Dirección de tu worker",
+    "urlHelp": "La que te dio Fly.io al desplegarlo, por ejemplo https://mi-worker.fly.dev",
+    "tokenLabel": "Token",
+    "tokenHelp": "El valor de WORKER_TOKEN que configuraste. Se guarda en este navegador.",
+    "check": "Comprobar conexión",
+    "checking": "Comprobando…",
+    "edit": "Ajustes del worker",
+    "forget": "Olvidar",
+    "ready": "Conectado · yt-dlp {{version}} · hasta {{minutes}} min por pista",
+    "noFfmpeg": "sin ffmpeg: algunas fuentes fallarán",
+    "unreachable": "No se pudo contactar con el worker. Revisa la dirección y que esté encendido.",
+    "notConfiguredShort": "Configura primero la dirección de tu worker.",
+    "close": "Cerrar"
+  },
+  "workerUrl": {
+    "empty": "Escribe la dirección de tu worker.",
+    "not-a-url": "Eso no parece una dirección. Debe empezar por https://",
+    "bad-scheme": "Solo se admiten direcciones http y https."
   }
 }

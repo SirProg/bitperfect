@@ -1,0 +1,2 @@
+# El worker se despliega aparte (Fly.io, Docker). Vercel solo sirve el frontend.
+worker/

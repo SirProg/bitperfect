@@ -1,9 +1,20 @@
-import type { BitDepth, ConversionOptions } from '../../types'
+import type { BitDepth, ConversionOptions, ConversionTags } from '../../types'
 import { getFormat } from '../formats/catalog'
 
 /** Nombres dentro del sistema de archivos virtual de ffmpeg.wasm. */
 export const INPUT_FILENAME = 'input'
 export const OUTPUT_FILENAME = 'output'
+/** Carátula externa, cuando viene de una fuente remota y no del propio archivo. */
+export const COVER_FILENAME = 'cover.jpg'
+
+/** Entradas adicionales que `convert.ts` haya escrito en el FS virtual. */
+export interface BuildExtras {
+  /**
+   * Nombre de la carátula externa en el FS virtual. Al descargar por URL la
+   * imagen llega aparte (la miniatura del vídeo), no dentro del audio.
+   */
+  coverInput?: string
+}
 
 /**
  * Nombre del archivo dentro del FS virtual. La extensión importa: ffmpeg
@@ -42,14 +53,28 @@ export function extensionOf(filename: string): string {
  *   porque ffmpeg abortaría la conversión.
  * - La carátula solo se mapea en formatos que la admiten; en el resto se usa
  *   `-vn` para no arrastrar el stream de imagen.
+ * - Los tags explícitos van después de `-map_metadata` para que lo sobrescriban.
  */
-export function buildArgs(sourceFilename: string, options: ConversionOptions): string[] {
+export function buildArgs(
+  sourceFilename: string,
+  options: ConversionOptions,
+  extras: BuildExtras = {},
+): string[] {
   const spec = getFormat(options.format)
+  const wantsCover = options.preserveCoverArt && spec.supports.coverArt
+  // La carátula externa solo entra si el formato la admite; si no, ni se abre
+  // el segundo input, para no dejar un stream mapeado a ninguna parte.
+  const externalCover = wantsCover ? extras.coverInput : undefined
+
   const args: string[] = ['-i', virtualInputName(sourceFilename)]
+  if (externalCover) args.push('-i', externalCover)
 
   // --- Selección de streams y carátula ---
   args.push('-map', '0:a:0')
-  if (options.preserveCoverArt && spec.supports.coverArt) {
+  if (externalCover) {
+    // Viene de la fuente remota: es el input 1, y siempre existe.
+    args.push('-map', '1:v', '-c:v', 'copy', '-disposition:v', 'attached_pic')
+  } else if (wantsCover) {
     // El `?` hace el mapeo opcional: sin carátula en el origen, no falla.
     args.push('-map', '0:v?', '-c:v', 'copy', '-disposition:v', 'attached_pic')
   } else {
@@ -63,6 +88,8 @@ export function buildArgs(sourceFilename: string, options: ConversionOptions): s
     // que es el que ffmpeg escribe por defecto.
     args.push('-id3v2_version', '3')
   }
+  // Después de `-map_metadata`, para ganarle cuando ambos traen el mismo campo.
+  args.push(...tagArgs(options.tags))
 
   // --- Códec de audio y parámetros propios del formato ---
   args.push('-c:a', encoderFor(options))
@@ -101,6 +128,22 @@ export function buildArgs(sourceFilename: string, options: ConversionOptions): s
   }
 
   args.push(virtualOutputName(options))
+  return args
+}
+
+/**
+ * `-metadata clave=valor` por cada tag con contenido.
+ *
+ * Los valores vacíos se omiten en vez de escribirse en blanco: un
+ * `-metadata artist=` borraría el que trajera el original.
+ */
+function tagArgs(tags: ConversionTags | undefined): string[] {
+  if (!tags) return []
+  const args: string[] = []
+  for (const [key, value] of Object.entries(tags)) {
+    const clean = value?.trim()
+    if (clean) args.push('-metadata', `${key}=${clean}`)
+  }
   return args
 }
 

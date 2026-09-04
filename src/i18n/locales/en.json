@@ -1,11 +1,16 @@
 {
   "app": {
     "name": "BitPerfect",
-    "tagline": "Convert your audio without it leaving the browser.",
-    "description": "Pick a file, pick a format, download it. Conversion runs on your machine: nothing is uploaded, there are no accounts, and no history is kept."
+    "tagline": "Convert your audio without uploading it anywhere.",
+    "description": "Bring a file from your machine or paste a URL. Either way, conversion happens right here in your browser: no accounts, no history, and your audio is never processed on anyone else's server."
   },
-  "language": { "label": "Language" },
-  "audio": { "mono": "Mono", "stereo": "Stereo" },
+  "language": {
+    "label": "Language"
+  },
+  "audio": {
+    "mono": "Mono",
+    "stereo": "Stereo"
+  },
   "engine": {
     "multiThread": {
       "label": "Multi-thread",
@@ -31,7 +36,9 @@
     "coverAlt": "Album cover",
     "previewLabel": "Original audio"
   },
-  "target": { "title": "Target" },
+  "target": {
+    "title": "Target"
+  },
   "preview": {
     "play": "Play {{label}}",
     "pause": "Pause {{label}}",
@@ -48,9 +55,18 @@
   "preset": {
     "legend": "Preset",
     "customActive": "You have changed a setting by hand. Pick a preset again to restore it.",
-    "maxQuality": { "label": "Best quality", "help": "Favours fidelity over file size." },
-    "balanced": { "label": "Balanced", "help": "Good sound at a reasonable size." },
-    "mobile": { "label": "Save space", "help": "Light files for your phone." }
+    "maxQuality": {
+      "label": "Best quality",
+      "help": "Favours fidelity over file size."
+    },
+    "balanced": {
+      "label": "Balanced",
+      "help": "Good sound at a reasonable size."
+    },
+    "mobile": {
+      "label": "Save space",
+      "help": "Light files for your phone."
+    }
   },
   "advanced": {
     "legend": "Advanced settings",
@@ -111,7 +127,9 @@
       "body": "The chosen format does not take an embedded image when ffmpeg writes it. Other metadata is still preserved."
     }
   },
-  "actions": { "convert": "Convert" },
+  "actions": {
+    "convert": "Convert"
+  },
   "queue": {
     "title": "Conversions",
     "clear": "Clear finished",
@@ -129,7 +147,65 @@
     "elapsed": "{{seconds}}s"
   },
   "footer": {
-    "privacy": "Everything happens in your browser. No file is ever sent to a server.",
+    "privacy": "Your audio is converted on your machine. Nothing is processed on anyone else's server.",
     "source": "Source code"
+  },
+  "tabs": {
+    "legend": "Audio source",
+    "file": {
+      "label": "File",
+      "hint": "from your machine"
+    },
+    "url": {
+      "label": "From URL",
+      "hint": "YouTube, TikTok and more"
+    }
+  },
+  "privacy": {
+    "file": "The file never leaves your machine. It is converted right here, in the browser.",
+    "url": "The URL will travel to your own worker to extract the audio. Conversion still happens here.",
+    "urlConfigured": "The URL will travel to {{host}}, your own worker. Conversion still happens here, in the browser."
+  },
+  "url": {
+    "label": "Audio or video address",
+    "placeholder": "https://www.youtube.com/watch?v=…",
+    "check": "Check",
+    "checking": "Checking…",
+    "fetch": "Fetch this audio",
+    "preparing": "The worker is preparing the download…",
+    "transferring": "Downloading… {{percent}}%"
+  },
+  "sourceUrl": {
+    "empty": "Paste an address to get started.",
+    "not-a-url": "That does not look like a web address. It should start with https://",
+    "bad-scheme": "Only http and https addresses are accepted.",
+    "no-host": "The address is missing its host."
+  },
+  "urlEmpty": {
+    "title": "You need your own worker",
+    "why": "The browser cannot download from YouTube or TikTok on its own: those sites do not allow it from another page, and extracting the audio needs a program that is updated every few weeks.",
+    "yours": "That is why BitPerfect hosts none. You deploy your own in a few minutes, and the address you paste will not pass through anyone else's server.",
+    "configure": "Set up my worker",
+    "docs": "How to deploy it"
+  },
+  "worker": {
+    "urlLabel": "Your worker's address",
+    "urlHelp": "The one Fly.io gave you on deploy, for example https://my-worker.fly.dev",
+    "tokenLabel": "Token",
+    "tokenHelp": "The WORKER_TOKEN value you configured. Stored in this browser.",
+    "check": "Test connection",
+    "checking": "Checking…",
+    "edit": "Worker settings",
+    "forget": "Forget",
+    "ready": "Connected · yt-dlp {{version}} · up to {{minutes}} min per track",
+    "noFfmpeg": "no ffmpeg: some sources will fail",
+    "unreachable": "Could not reach the worker. Check the address and that it is running.",
+    "notConfiguredShort": "Set your worker's address first.",
+    "close": "Close"
+  },
+  "workerUrl": {
+    "empty": "Enter your worker's address.",
+    "not-a-url": "That does not look like an address. It should start with https://",
+    "bad-scheme": "Only http and https addresses are accepted."
   }
 }

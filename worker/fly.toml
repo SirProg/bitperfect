@@ -1,0 +1,40 @@
+# Plantilla para Fly.io. `fly launch --copy-config` la toma tal cual;
+# cambia `app` por el nombre que elijas.
+app = "bitperfect-worker"
+primary_region = "mad"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  MAX_DURATION_SEC = "1800"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  # La máquina se duerme sin uso y despierta con la primera petición. Un worker
+  # personal está parado casi todo el tiempo; no tiene sentido pagarlo encendido.
+  auto_stop_machines = "suspend"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type = "requests"
+    # yt-dlp satura CPU y red. Encolar es mejor que atender mal a varios a la vez.
+    soft_limit = 2
+    hard_limit = 4
+
+[[vm]]
+  # 512 MB se queda corto al remuxar HLS con ffmpeg.
+  memory = "1gb"
+  cpu_kind = "shared"
+  cpus = 1
+
+[checks]
+  [checks.health]
+    type = "http"
+    port = 8080
+    path = "/health"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"

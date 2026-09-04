@@ -8,15 +8,33 @@ import EngineBadge from './components/EngineBadge'
 import FormatPicker from './components/FormatPicker'
 import LanguageSwitcher from './components/LanguageSwitcher'
 import PresetPicker from './components/PresetPicker'
+import PrivacyNote from './components/PrivacyNote'
 import QueueItemCard from './components/QueueItemCard'
 import SourceCard from './components/SourceCard'
+import SourceTabs, { type SourceMode } from './components/SourceTabs'
+import UrlInput from './components/UrlInput'
 import WarningList from './components/WarningList'
+import WorkerSettingsPanel from './components/WorkerSettings'
 import { describeIsolation } from './core/ffmpeg/capabilities'
 import { applyPreset, defaultOptions } from './core/formats/presets'
 import { collectWarnings } from './core/formats/quality'
 import { readMetadata, releaseMetadata } from './core/metadata/read'
+import { download } from './core/remote/client'
+import { useWorkerSettings } from './core/remote/settings'
+import type { ProbedTrack } from './core/remote/types'
+import { hostOf } from './core/remote/validate'
 import { useConversionQueue } from './queue/useConversionQueue'
-import type { ConversionOptions, FormatId, TrackMetadata } from './types'
+import type { ConversionOptions, ConversionTags, FormatId, TrackMetadata } from './types'
+
+/** De dónde vino un audio traído por URL. */
+interface RemoteOrigin {
+  sourceUrl: string
+  extractor: string
+  /** Miniatura ya descargada, para incrustarla como carátula. */
+  cover?: Blob
+  /** Tags de la fuente: el audio descargado llega sin ellos. */
+  tags: ConversionTags
+}
 
 /** El archivo que se está configurando, antes de mandarlo a la cola. */
 interface Staged {
@@ -24,6 +42,7 @@ interface Staged {
   url: string
   metadata?: TrackMetadata
   peaks: number[]
+  remote?: RemoteOrigin
 }
 
 export default function App() {
@@ -34,6 +53,12 @@ export default function App() {
   const [staged, setStaged] = useState<Staged | null>(null)
   const [options, setOptions] = useState<ConversionOptions>(() => defaultOptions('mp3'))
   const [showAdvanced, setShowAdvanced] = useState(false)
+  const [mode, setMode] = useState<SourceMode>('file')
+  const [showWorkerSettings, setShowWorkerSettings] = useState(false)
+  const [fetching, setFetching] = useState<{ ratio?: number } | null>(null)
+  const [fetchError, setFetchError] = useState<string | null>(null)
+
+  const { settings, update: updateSettings, forget: forgetSettings, configured } = useWorkerSettings()
 
   /**
    * Espejo de `staged` para poder liberar sus object URLs sin que la limpieza
@@ -49,11 +74,9 @@ export default function App() {
     releaseMetadata(value.metadata)
   }, [])
 
-  const handleFiles = useCallback(
-    (files: File[]) => {
-      const file = files[0]
-      if (!file) return
-
+  /** Deja el archivo listo para configurarse, venga de donde venga. */
+  const stage = useCallback(
+    (file: File, remote?: RemoteOrigin) => {
       // Liberar aquí y no dentro del updater de setState: en StrictMode los
       // updaters se ejecutan dos veces y revocarían URLs por duplicado.
       releaseStaged(stagedRef.current)
@@ -61,6 +84,7 @@ export default function App() {
         file,
         url: URL.createObjectURL(file),
         peaks: placeholderPeaks(file.name),
+        remote,
       }
       stagedRef.current = next
       setStaged(next)
@@ -72,17 +96,66 @@ export default function App() {
           releaseMetadata(metadata)
           return
         }
-        const updated = { ...stagedRef.current, metadata, peaks: peaks ?? stagedRef.current.peaks }
+        // Lo que dice la fuente manda sobre lo que traiga el archivo: un
+        // `bestaudio` descargado viene sin título ni artista.
+        const merged: TrackMetadata = remote
+          ? {
+              ...metadata,
+              title: remote.tags.title ?? metadata.title,
+              artist: remote.tags.artist ?? metadata.artist,
+            }
+          : metadata
+        const updated = { ...stagedRef.current, metadata: merged, peaks: peaks ?? stagedRef.current.peaks }
         stagedRef.current = updated
         setStaged(updated)
         // Con la profundidad real del original a la vista, el preset puede
         // decidir mejor (no tiene sentido subir un 16 bits a 24).
         setOptions((prev) =>
-          prev.preset === 'custom' ? prev : { ...prev, ...applyPreset(prev.preset, prev.format, metadata) },
+          prev.preset === 'custom' ? prev : { ...prev, ...applyPreset(prev.preset, prev.format, merged) },
         )
       })()
     },
     [releaseStaged],
+  )
+
+  const handleFiles = useCallback(
+    (files: File[]) => {
+      const file = files[0]
+      if (file) stage(file)
+    },
+    [stage],
+  )
+
+  /**
+   * Trae el audio desde la URL y lo mete por el mismo camino que un archivo
+   * local: a partir de aquí no hay ninguna diferencia.
+   */
+  const handleRemote = useCallback(
+    async (sourceUrl: string, track: ProbedTrack) => {
+      setFetchError(null)
+      setFetching({})
+      try {
+        const { file, cover } = await download(settings, sourceUrl, {
+          coverPath: track.thumbnailPath,
+          onProgress: (ratio) => setFetching({ ratio }),
+        })
+        stage(file, {
+          sourceUrl,
+          extractor: track.extractor,
+          cover,
+          tags: {
+            title: track.title,
+            artist: track.uploader ?? undefined,
+            comment: track.webpageUrl ?? sourceUrl,
+          },
+        })
+      } catch (error) {
+        setFetchError(error instanceof Error ? error.message : String(error))
+      } finally {
+        setFetching(null)
+      }
+    },
+    [settings, stage],
   )
 
   const changeFormat = (format: FormatId) => {
@@ -102,9 +175,14 @@ export default function App() {
 
   const convert = () => {
     if (!staged) return
+    // Los tags de la fuente remota viajan con las opciones: el audio descargado
+    // llega desnudo y sin esto el resultado saldría sin título ni artista.
+    const withOrigin: ConversionOptions = staged.remote
+      ? { ...options, tags: { ...staged.remote.tags, ...options.tags } }
+      : options
     // La cola vuelve a leer metadatos y crea sus propias URLs, así que las de
     // la ficha de configuración dejan de hacer falta en cuanto se encola.
-    addFiles([staged.file], options)
+    addFiles([staged.file], withOrigin, staged.remote?.cover)
     releaseStaged(staged)
     stagedRef.current = null
     setStaged(null)
@@ -135,7 +213,70 @@ export default function App() {
           <p className="mt-5 max-w-xl text-base leading-relaxed text-ink-dim">{t('app.description')}</p>
         </section>
 
-        <Dropzone onFiles={handleFiles} />
+        <SourceTabs
+          value={mode}
+          onChange={(next) => {
+            setMode(next)
+            setFetchError(null)
+          }}
+        />
+
+        <div className="mt-5 space-y-4">
+          {mode === 'file' ? (
+            <Dropzone onFiles={handleFiles} />
+          ) : (
+            <>
+              {showWorkerSettings && (
+                <WorkerSettingsPanel
+                  settings={settings}
+                  // El panel no se cierra solo al conectar: si lo hiciera, el
+                  // mensaje de «conectado» desaparecería en el mismo instante
+                  // en que aparece y el usuario no sabría si funcionó.
+                  onChange={updateSettings}
+                  onForget={forgetSettings}
+                  onClose={() => setShowWorkerSettings(false)}
+                />
+              )}
+
+              <UrlInput
+                settings={settings}
+                configured={configured}
+                busy={fetching !== null}
+                onFetch={(url, track) => void handleRemote(url, track)}
+                onOpenSettings={() => setShowWorkerSettings((v) => !v)}
+              />
+
+              {configured && !showWorkerSettings && (
+                <button
+                  type="button"
+                  onClick={() => setShowWorkerSettings(true)}
+                  className="rail hover:text-ink-dim"
+                >
+                  {t('worker.edit')}
+                </button>
+              )}
+
+              {fetching && (
+                <p className="measure text-xs text-ink-dim" aria-live="polite">
+                  {fetching.ratio === undefined
+                    ? t('url.preparing')
+                    : t('url.transferring', { percent: Math.round(fetching.ratio * 100) })}
+                </p>
+              )}
+
+              {fetchError && (
+                <p className="rounded border border-danger/30 bg-danger/5 px-3 py-2 text-xs leading-relaxed text-ink-dim">
+                  {fetchError}
+                </p>
+              )}
+            </>
+          )}
+
+          <PrivacyNote
+            mode={mode}
+            workerHost={mode === 'url' && configured ? hostOf(settings.url) : null}
+          />
+        </div>
 
         {rejected.length > 0 && (
           <ul className="mt-3 space-y-1" aria-live="polite">

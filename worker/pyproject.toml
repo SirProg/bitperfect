@@ -1,0 +1,22 @@
+[project]
+name = "bitperfect-worker"
+version = "1.0.0"
+description = "Extrae audio de una URL para que BitPerfect lo convierta en el navegador."
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "S", "C4", "SIM"]
+# S603/S607: invocamos yt-dlp y ffmpeg por subproceso a propósito, con
+# argumentos construidos por nosotros y nunca interpolando la entrada en un shell.
+ignore = ["S603", "S607"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "S104"]  # S104: las IPs "peligrosas" son justo el objeto de la prueba

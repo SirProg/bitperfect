@@ -1,6 +1,12 @@
 import type { ConversionOptions, ConversionResult, TrackMetadata } from '../../types'
 import { getFormat } from '../formats/catalog'
-import { buildArgs, downloadFilename, virtualInputName, virtualOutputName } from './buildArgs'
+import {
+  buildArgs,
+  COVER_FILENAME,
+  downloadFilename,
+  virtualInputName,
+  virtualOutputName,
+} from './buildArgs'
 import { getSession, terminateSession } from './client'
 import { parseTimeFromLog } from './progress'
 
@@ -15,6 +21,11 @@ export interface ConvertParams {
   file: File
   options: ConversionOptions
   metadata?: TrackMetadata
+  /**
+   * Carátula que no viene dentro del audio. La usa la descarga por URL, donde
+   * la imagen es la miniatura de la fuente y llega como archivo aparte.
+   */
+  cover?: Blob
   onProgress?: (ratio: number) => void
   signal?: AbortSignal
 }
@@ -32,6 +43,7 @@ export async function convert({
   file,
   options,
   metadata,
+  cover,
   onProgress,
   signal,
 }: ConvertParams): Promise<ConversionResult> {
@@ -66,8 +78,17 @@ export async function convert({
   try {
     await ffmpeg.writeFile(inputName, new Uint8Array(await file.arrayBuffer()))
 
+    let coverInput: string | undefined
+    if (cover && cover.size > 0) {
+      await ffmpeg.writeFile(COVER_FILENAME, new Uint8Array(await cover.arrayBuffer()))
+      coverInput = COVER_FILENAME
+    }
+
     const timeoutMs = WATCHDOG_BASE_MS + (duration ?? 60) * WATCHDOG_PER_SECOND_MS
-    const code = await withWatchdog(ffmpeg.exec(buildArgs(file.name, options)), timeoutMs)
+    const code = await withWatchdog(
+      ffmpeg.exec(buildArgs(file.name, options, { coverInput })),
+      timeoutMs,
+    )
 
     if (signal?.aborted) throw new ConversionCancelled()
     if (code !== 0) throw new Error(`ffmpeg terminó con código ${code}`)

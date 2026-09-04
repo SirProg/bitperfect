@@ -2,7 +2,7 @@
 
 # 🎧 BitPerfect
 
-**Conversor de audio que funciona íntegramente en tu navegador. Sube un archivo, elige el formato de salida y descárgalo — sin servidores, sin cuentas y sin que tu música salga de tu equipo.**
+**Convierte tu audio sin subirlo a ninguna parte. Trae un archivo o pega una URL, elige el formato de salida y descárgalo — sin cuentas y sin que tu música se procese en servidores ajenos.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Vite](https://img.shields.io/badge/Vite-React_TS-646CFF.svg)](https://vitejs.dev/)
@@ -16,13 +16,23 @@
 
 ## 📖 ¿Qué es BitPerfect?
 
-**BitPerfect** es una aplicación web de código abierto para **convertir archivos de audio entre formatos** (por ejemplo `.mp3 → .flac` o `.flac → .mp3`). Toda la conversión ocurre **dentro del navegador** gracias a [ffmpeg.wasm](https://ffmpegwasm.netlify.app/): el archivo **nunca se sube a ningún servidor**, lo que hace la herramienta rápida, privada y gratuita de alojar.
+**BitPerfect** es una aplicación web de código abierto para **convertir audio entre formatos** (por ejemplo `.mp3 → .flac` o `.flac → .mp3`). Toda la conversión ocurre **dentro del navegador** gracias a [ffmpeg.wasm](https://ffmpegwasm.netlify.app/): el audio **nunca se sube a ningún servidor** para convertirse.
+
+El audio puede venir de dos sitios, y la interfaz siempre dice cuál es cuál:
+
+| Modo | De dónde viene | Qué sale de tu equipo |
+|------|----------------|------------------------|
+| **Archivo** | Tu disco | **Nada.** Ni un byte |
+| **Desde URL** | YouTube, TikTok, Instagram y [otros muchos sitios](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md) | Solo la URL, y solo hacia **tu propio worker** |
+
+El modo URL necesita un servicio aparte con [`yt-dlp`](https://github.com/yt-dlp/yt-dlp), porque el navegador no puede descargar de esas plataformas por su cuenta. **No hay instancia pública: levantas la tuya** en unos minutos, así que la dirección que pegues no pasa por ningún servidor de terceros. Ver [`worker/`](./worker#readme).
 
 Nace como acompañante del proyecto [**musikver**](https://github.com/SirProg/musikver) (servidor de música FLAC): con BitPerfect puedes convertir tus pistas al formato que necesites antes de llevarlas a tu biblioteca o a cualquier otro dispositivo. Aun así, **es una app totalmente independiente**: no comparte código, cuentas ni conexión con musikver.
 
 ### Características principales
 
-- 🌐 **100% en el navegador:** la conversión se ejecuta en tu equipo con WebAssembly. Ningún archivo se envía a un servidor.
+- 🌐 **La conversión siempre en tu equipo:** se ejecuta con WebAssembly. Tu audio nunca se procesa en un servidor ajeno.
+- 🔗 **Descarga desde URL:** pega un enlace y obtén su audio en el formato que quieras, con su título, autor y carátula ya puestos. Requiere un worker propio.
 - 🔓 **Sin cuentas ni login:** herramienta pública y abierta. Entras y conviertes.
 - 🔁 **Bidireccional:** convierte entre los formatos de audio más usados en cualquier dirección.
 - 🏷️ **Preserva metadatos y carátula:** título, artista, álbum, año, número de pista y la imagen embebida se mantienen en la conversión (según lo soporte el formato de destino).
@@ -88,9 +98,60 @@ Se conservan los **tags** (título, artista, álbum, año, número de pista…) 
 
 ---
 
+## 🔗 Descarga desde URL
+
+Pega el enlace de un vídeo o audio y BitPerfect extrae su pista de sonido, la convierte al formato que elijas y le pone **título, autor y carátula** de la fuente. Funciona con [los cientos de sitios que soporta `yt-dlp`](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md).
+
+### Por qué necesita un servicio aparte
+
+El navegador no puede hacerlo solo:
+
+- Esas plataformas **no permiten** que otra página lea sus ficheros de media (sin CORS).
+- Extraer la pista exige **descifrar el JavaScript de sus reproductores**, que cambia cada pocas semanas. Ese es el trabajo de `yt-dlp`.
+
+### El worker es tuyo
+
+**No hay ninguna instancia pública.** Levantas la tuya —unos minutos en Fly.io— y la configuras en la app. Eso significa que **la URL que pegas solo llega a tu propio servidor**, y el audio sigue convirtiéndose en tu navegador como siempre.
+
+```bash
+cd worker
+fly launch --copy-config --no-deploy
+fly secrets set WORKER_TOKEN="$(openssl rand -hex 32)"
+fly deploy
+```
+
+Después, en la app: **Desde URL → Configurar mi worker**, y pega su dirección y el token. Instrucciones completas en [`worker/README.md`](./worker#readme).
+
+### Qué reparte cada pieza
+
+```
+       Tu navegador                      Tu worker (Fly.io)
+┌──────────────────────────┐         ┌──────────────────────┐
+│  pegas la URL   ─────────────────▶ │  yt-dlp la resuelve  │
+│                          │         │  y extrae el audio   │
+│  ffmpeg.wasm  ◀─── audio ───────── │                      │
+│  convierte aquí          │         │  no convierte nada   │
+└──────────────────────────┘         └──────────────────────┘
+```
+
+El worker **solo extrae**. Toda la conversión, los presets, los avisos de calidad y los metadatos siguen ocurriendo en tu equipo.
+
+### Límites
+
+- **Una pista por URL.** Las listas de reproducción se recortan al primer elemento.
+- **30 minutos** por pista, configurable en tu worker.
+- **No se admiten emisiones en directo.**
+- Mientras el worker prepara la descarga no hay porcentaje; el progreso real empieza cuando comienza a transferirse.
+
+### Nota legal
+
+Descargar contenido de estas plataformas suele ir contra sus términos de servicio, y lo que sea legítimo depende de tu jurisdicción y de qué descargues: contenido propio, con licencia libre o de dominio público no plantea el mismo problema que material con derechos. La herramienta no toma esa decisión por ti.
+
+---
+
 ## 🖥️ Flujo de uso
 
-1. **Arrastra** un archivo de audio (o haz clic para seleccionarlo). Máximo **500 MB** por archivo.
+1. Elige el origen: **arrastra un archivo** (máximo **500 MB**) o pega una **URL** y pulsa *Comprobar* para ver qué vas a traer.
 2. **Escucha la previsualización** del original.
 3. **Elige el formato de salida** y, si quieres, ajusta un preset o el control avanzado. Si aplica, verás el aviso de calidad.
 4. Pulsa **Convertir**. La conversión entra en una **cola** y una **barra de progreso** muestra el avance real.
@@ -114,7 +175,8 @@ Se conservan los **tags** (título, artista, álbum, año, número de pista…) 
 | Idiomas | [i18next](https://www.i18next.com/) + react-i18next (es / en) |
 | Tests | [Vitest](https://vitest.dev/) |
 | Lint | [oxlint](https://oxc.rs/) |
-| Ejecución | 100% cliente — sin backend |
+| Descarga por URL | [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) en un worker propio (FastAPI + Docker) |
+| Ejecución | Cliente para todo; el worker es opcional y lo aloja cada usuario |
 | Despliegue | [Vercel](https://vercel.com/) (estático) |
 | Licencia | MIT |
 
@@ -123,21 +185,26 @@ Se conservan los **tags** (título, artista, álbum, año, número de pista…) 
 ## 🏗️ Arquitectura
 
 ```
-        Navegador del usuario
-┌──────────────────────────────────────┐
-│  React + TypeScript (UI)              │
-│    │                                  │
-│    │  archivo (drag & drop)           │
-│    ▼                                  │
-│  ffmpeg.wasm  ← convierte en memoria  │
-│    │                                  │
-│    ▼                                  │
-│  Blob de salida → descarga            │
-└──────────────────────────────────────┘
-        (nada sale del navegador)
+              Navegador del usuario
+┌──────────────────────────────────────────────┐
+│  React + TypeScript (UI)                     │
+│    │                                         │
+│    ├── archivo local (arrastrar y soltar)    │
+│    │                                         │
+│    └── URL ──▶ tu worker ──▶ audio extraído  │
+│                (yt-dlp)                      │
+│    │                                         │
+│    ▼                                         │
+│  ffmpeg.wasm  ← convierte en memoria         │
+│    │                                         │
+│    ▼                                         │
+│  Blob de salida → descarga                   │
+└──────────────────────────────────────────────┘
 ```
 
-No hay servidor, base de datos ni almacenamiento remoto. El sitio se sirve como **estático**; toda la lógica vive en el cliente.
+El sitio se sirve como **estático**: no hay base de datos ni almacenamiento remoto, y la conversión vive entera en el cliente.
+
+El **worker** es la única pieza de servidor, es **opcional** y **la despliega cada usuario**. Solo interviene para extraer audio de una URL; nunca ve un archivo local ni convierte nada.
 
 ---
 
@@ -215,6 +282,7 @@ La aplicación lo detecta en runtime y carga el core **monohilo**, que no lo nec
 - **Un archivo a la vez** mediante cola, para no saturar la CPU ni la memoria del navegador.
 - **Límite de 500 MB por archivo.** Al ejecutarse en WebAssembly, archivos muy grandes pueden acercarse a los límites de memoria del navegador; en equipos modestos conviene usar archivos más pequeños.
 - La velocidad depende del equipo del usuario, no de un servidor.
+- En el modo URL, **30 minutos por pista** (configurable en tu worker) y una descarga a la vez.
 
 ---
 
@@ -231,9 +299,12 @@ La aplicación lo detecta en runtime y carga el core **monohilo**, que no lo nec
 - [x] Preservación de metadatos y carátula donde el formato lo admite
 - [x] Interfaz bilingüe español / inglés
 - [x] Fallback monohilo para navegadores sin `SharedArrayBuffer`
+- [x] Descarga por URL mediante un worker propio, con título, autor y carátula de la fuente
 
 **Siguientes pasos**
 - [ ] Conversión por lotes de verdad (hoy la cola procesa de uno en uno)
+- [ ] Listas de reproducción y varias URLs a la vez
+- [ ] Progreso real durante la fase de descarga en el worker
 - [ ] Recorte y normalización de volumen
 - [ ] Edición de tags antes de convertir
 - [ ] Onda del resultado también en formatos que el navegador no sabe decodificar
@@ -253,6 +324,18 @@ Afecta a *cualquier* salida Opus estéreo, incluso partiendo de 44.1 kHz, porque
 ffmpeg.wasm acumula memoria entre llamadas a `exec()`. Tras unas ocho conversiones seguidas sobre la misma instancia empieza a abortar con `memory access out of bounds`, y las que siguen fallan todas. `convert.ts` destruye la instancia al terminar cada archivo para que la siguiente arranque con un heap limpio.
 
 Como red de seguridad hay además un plazo máximo por conversión: sin él, un core que revienta dejaría la interfaz esperando indefinidamente.
+
+### La miniatura no puede ir en un `<img src>` directo
+
+Al traer audio de una URL, la carátula sale de la miniatura de la fuente, y el worker la sirve por `/thumb` ya convertida a JPEG (YouTube manda WebP, que MP3 no admite como carátula).
+
+Pero `/thumb` **exige el token del worker**, y una etiqueta `<img>` no puede enviar cabecera `Authorization`: el navegador recibe un 401 y la imagen queda en blanco sin ningún error visible. Se descarga con `fetch` autenticado y se muestra como object URL. De paso deja de importar COEP, porque un `blob:` es del mismo origen.
+
+Conviene tener claro el matiz de COEP, porque es fácil llegar a la conclusión equivocada: un `fetch()` cross-origin va en modo CORS y **le basta con pasar CORS**. Donde `require-corp` sí exige `Cross-Origin-Resource-Policy` es en las cargas *no-cors*, como las de un `<img>`.
+
+### `probe` y `download` tienen que pedir el mismo formato
+
+`/probe` describe lo que se va a descargar y `/download` lo descarga. Si cada uno elige el formato por su cuenta, la ficha miente: `yt-dlp` sin `--format` estima el tamaño del **vídeo completo**, así que una pista de 9,7 MB se anunciaba como 722 MB. Ambos comparten ahora la misma constante.
 
 ### Todo se sirve desde el propio origen
 
